@@ -1,0 +1,20 @@
+rules_version = '2';
+
+// Media (fotos/videos) bajo cuadras/{cuadraId}/... — solo miembros de la cuadra.
+service firebase.storage {
+  match /b/{bucket}/o {
+    function signedIn() { return request.auth != null; }
+    function isMember(cuadraId) {
+      return signedIn() && firestore.exists(
+        /databases/(default)/documents/cuadras/$(cuadraId)/miembros/$(request.auth.uid)
+      );
+    }
+
+    match /cuadras/{cuadraId}/{allPaths=**} {
+      allow read: if isMember(cuadraId);
+      allow write: if isMember(cuadraId)
+        && request.resource.size < 50 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*|video/.*');
+    }
+  }
+}

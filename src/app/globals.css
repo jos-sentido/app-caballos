@@ -1,0 +1,73 @@
+@import "tailwindcss";
+
+/* ───────────────────────────────────────────────────────────────────────────
+   Sistema visual de Cuaderno de Cuadra (tokens portados del prototipo).
+   Tinta y hueso; tipografía Bricolage Grotesque (display) + IBM Plex Sans.
+   ─────────────────────────────────────────────────────────────────────────── */
+:root {
+  --bg: #F1F4F7; --surface: #FFFFFF; --surface-2: #EAEEF2; --inset: #F6F8FA;
+  --ink: #182230; --ink-2: #51606F; --ink-3: #8793A1; --line: #DBE1E8;
+  --accent: #1E3A5F; --accent-ink: #FFFFFF;
+  --pos: #1C7A50; --pos-bg: #E2F1E9; --neg: #B23F2A; --neg-bg: #F7E7E2; --warn: #8A5A00; --warn-bg: #F6ECD2;
+  --radius: 14px; --shadow: 0 1px 2px rgba(20,30,45,.05), 0 6px 18px rgba(20,30,45,.05);
+  --font-display: "Bricolage Grotesque", -apple-system, system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", -apple-system, system-ui, sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0E131A; --surface: #161E27; --surface-2: #1E2831; --inset: #121A22;
+    --ink: #E9EEF3; --ink-2: #9FABB8; --ink-3: #6A7684; --line: #293440;
+    --accent: #86ABD8; --accent-ink: #0E131A; --pos: #54C08B; --pos-bg: #16271E; --neg: #E07B61; --neg-bg: #2C1A14; --warn: #D7A54A; --warn-bg: #2A2110;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 6px 18px rgba(0,0,0,.28);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0E131A; --surface: #161E27; --surface-2: #1E2831; --inset: #121A22;
+  --ink: #E9EEF3; --ink-2: #9FABB8; --ink-3: #6A7684; --line: #293440;
+  --accent: #86ABD8; --accent-ink: #0E131A; --pos: #54C08B; --pos-bg: #16271E; --neg: #E07B61; --neg-bg: #2C1A14; --warn: #D7A54A; --warn-bg: #2A2110;
+  --shadow: 0 1px 2px rgba(0,0,0,.3), 0 6px 18px rgba(0,0,0,.28);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html, body { padding: 0; margin: 0; }
+body {
+  background: var(--bg); color: var(--ink);
+  font-family: var(--font-body); line-height: 1.5;
+  font-variant-numeric: tabular-nums; -webkit-text-size-adjust: 100%;
+}
+h1, h2, h3 { font-family: var(--font-display); letter-spacing: -0.01em; }
+a { color: inherit; }
+
+/* ── Primitivas reutilizables ───────────────────────────────────────────── */
+.card {
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: var(--radius); box-shadow: var(--shadow);
+}
+.btn {
+  font: inherit; font-weight: 600; cursor: pointer;
+  background: var(--accent); color: var(--accent-ink);
+  border: 0; border-radius: 10px; padding: 11px 16px;
+}
+.btn.ghost { background: var(--surface); color: var(--accent); border: 1px solid var(--line); }
+.btn:disabled { opacity: .55; cursor: default; }
+.input {
+  font: inherit; color: var(--ink); background: var(--inset);
+  border: 1px solid var(--line); border-radius: 10px; padding: 11px 12px; width: 100%;
+}
+.chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: .76rem; font-weight: 600; color: var(--ink-2);
+  background: var(--inset); border: 1px solid var(--line);
+  border-radius: 999px; padding: 4px 10px;
+}
+.chip.on { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.eyebrow { font-size: .72rem; letter-spacing: .09em; text-transform: uppercase; color: var(--accent); font-weight: 600; }
+.lede { color: var(--ink-2); margin: .35rem 0 0; max-width: 64ch; font-size: .92rem; }
+.beta {
+  color: var(--warn); font-size: .64rem; font-weight: 700;
+  letter-spacing: .06em; text-transform: uppercase;
+  background: var(--warn-bg); border-radius: 999px; padding: 2px 8px;
+}

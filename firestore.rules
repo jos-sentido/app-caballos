@@ -1,0 +1,75 @@
+rules_version = '2';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Cuaderno de Cuadra — reglas de seguridad (multi-cuadra + roles)
+//
+// Modelo:
+//   users/{uid}                         → perfil del usuario + índice de cuadras
+//   cuadras/{cuadraId}                  → la cuadra (tenant)
+//   cuadras/{cuadraId}/miembros/{uid}   → membresía: { nombre, roles: [...] }
+//   cuadras/{cuadraId}/<colección>/...  → datos de la cuadra
+//
+// Roles: Operador · Entrenador · Jinete · Dueño · Arrendador
+// (Caballerango es un integrante del Equipo, no un rol de permisos.)
+//
+// Estas reglas son la FUNDACIÓN. Se refinan en la Fase 1 (modelo de datos):
+// el modelo de "vínculos por caballo con consentimiento" añadirá condiciones
+// a nivel de documento (p. ej. un Dueño solo edita sus caballos).
+// ─────────────────────────────────────────────────────────────────────────────
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+    function uid() { return request.auth.uid; }
+    function memberDoc(c) {
+      return /databases/$(database)/documents/cuadras/$(c)/miembros/$(uid());
+    }
+    function isMember(c) { return signedIn() && exists(memberDoc(c)); }
+    function myRoles(c) { return get(memberDoc(c)).data.roles; }
+    function hasRole(c, r) { return isMember(c) && (r in myRoles(c)); }
+    function hasAny(c, rs) { return isMember(c) && myRoles(c).hasAny(rs); }
+
+    // Perfil del usuario — solo el propio dueño.
+    match /users/{u} {
+      allow read, write: if signedIn() && u == uid();
+    }
+
+    match /cuadras/{c} {
+      allow read:          if isMember(c);
+      // Crear una cuadra: el creador queda registrado como creadoPor.
+      allow create:        if signedIn() && request.resource.data.creadoPor == uid();
+      allow update, delete: if hasRole(c, 'Operador');
+
+      // Membresías de la cuadra.
+      match /miembros/{m} {
+        allow read: if isMember(c);
+        // Alta: el creador se da de alta a sí mismo durante el onboarding,
+        // o un Operador administra a los demás integrantes.
+        allow create: if signedIn() && (
+          (m == uid() && get(/databases/$(database)/documents/cuadras/$(c)).data.creadoPor == uid())
+          || hasRole(c, 'Operador')
+        );
+        allow update, delete: if hasRole(c, 'Operador');
+      }
+
+      // Lectura general: cualquier miembro lee los datos de su cuadra.
+      match /{document=**} {
+        allow read: if isMember(c);
+      }
+
+      // Escritura por colección (recursiva para subdocumentos como
+      // historial/galería de un caballo o jornadas/inscritos de un concurso).
+      match /caballos/{p=**}       { allow write: if hasAny(c, ['Operador', 'Entrenador', 'Jinete', 'Dueño']); }
+      match /entrenamientos/{p=**} { allow write: if hasAny(c, ['Operador', 'Entrenador', 'Jinete', 'Dueño']); }
+      match /programas/{p=**}      { allow write: if hasAny(c, ['Operador', 'Entrenador', 'Jinete', 'Dueño']); }
+      match /concursos/{p=**}      { allow write: if hasAny(c, ['Operador', 'Entrenador', 'Jinete', 'Dueño']); }
+      match /ubicaciones/{p=**}    { allow write: if hasAny(c, ['Operador', 'Arrendador', 'Dueño']); }
+      match /caballerizas/{p=**}   { allow write: if hasAny(c, ['Operador', 'Arrendador', 'Dueño']); }
+      match /tareas/{p=**}         { allow write: if isMember(c); }
+      match /equipo/{p=**}         { allow write: if hasRole(c, 'Operador'); }
+      match /proveedores/{p=**}    { allow write: if hasRole(c, 'Operador'); }
+      match /finanzas/{p=**}       { allow write: if hasRole(c, 'Operador'); }
+    }
+  }
+}
